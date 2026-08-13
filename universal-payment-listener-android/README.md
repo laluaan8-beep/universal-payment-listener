@@ -28,3 +28,5 @@ gradle testDebugUnitTest assembleDebug
 APK debug akan berada di:
 
 `app/build/outputs/apk/debug/app-debug.apk`
+
+GitHub Actions build trigger initialized for v1.0.2.
