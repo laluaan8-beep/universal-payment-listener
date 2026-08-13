@@ -1,0 +1,54 @@
+name: Build Universal Payment Listener APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - 'universal-payment-listener-android/**'
+      - '.github/workflows/build-universal-payment-listener-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Restore stable debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: universal-listener-debug-signing-v1
+      - name: Run unit tests
+        run: gradle -p universal-payment-listener-android testDebugUnitTest --stacktrace
+      - name: Build debug APK
+        run: gradle -p universal-payment-listener-android assembleDebug --stacktrace
+      - name: Prepare artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp universal-payment-listener-android/app/build/outputs/apk/debug/app-debug.apk \
+             dist/Universal-Payment-Listener-v1.0.2-debug.apk
+          sha256sum dist/Universal-Payment-Listener-v1.0.2-debug.apk \
+             > dist/Universal-Payment-Listener-v1.0.2-debug.apk.sha256
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Universal-Payment-Listener-v1.0.2
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
